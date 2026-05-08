@@ -1,0 +1,479 @@
+/* ============================================================
+   CONTROLE DE PAGAMENTOS — style.css
+   Tema: Refinado / Dark Luxury
+   ============================================================ */
+
+/* ---------- 1. RESET & TOKENS ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Paleta principal */
+  --clr-bg:        #0d0d10;       /* fundo escuro quase preto */
+  --clr-surface:   #16161c;       /* superfície dos cards */
+  --clr-border:    #2a2a35;       /* bordas sutis */
+  --clr-accent:    #c8f04d;       /* verde-limão vibrante */
+  --clr-accent-dk: #a3c93a;       /* hover do accent */
+  --clr-text:      #e8e8ec;       /* texto principal */
+  --clr-muted:     #7a7a8c;       /* texto secundário */
+  --clr-error:     #ff5c72;       /* erro */
+  --clr-success:   #4ddfb0;       /* sucesso */
+
+  /* Tipografia */
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+
+  /* Espaçamentos */
+  --sp-xs: 0.5rem;
+  --sp-sm: 1rem;
+  --sp-md: 1.5rem;
+  --sp-lg: 2rem;
+  --sp-xl: 3rem;
+
+  /* Radii */
+  --radius-sm:  8px;
+  --radius-md:  16px;
+  --radius-lg:  24px;
+  --radius-pill: 999px;
+
+  /* Transições */
+  --ease-out:   cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:   180ms;
+  --dur-med:    320ms;
+  --dur-slow:   500ms;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--clr-bg);
+  color: var(--clr-text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- 2. HERO SCREEN ---------- */
+.hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--sp-lg);
+  overflow: hidden;
+  text-align: center;
+}
+
+/* Grade decorativa de fundo */
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--clr-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--clr-border) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* Blob de luz de fundo */
+.bg-blob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: min(700px, 140vw);
+  aspect-ratio: 1;
+  background: radial-gradient(ellipse, rgba(200, 240, 77, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+  animation: blobPulse 6s ease-in-out infinite alternate;
+}
+@keyframes blobPulse {
+  from { transform: scale(1); opacity: 0.7; }
+  to   { transform: scale(1.12); opacity: 1; }
+}
+
+/* Conteúdo central */
+.hero__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-md);
+  max-width: 520px;
+  animation: heroReveal var(--dur-slow) var(--ease-out) both;
+}
+@keyframes heroReveal {
+  from { opacity: 0; translate: 0 24px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+/* Badge superior */
+.hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  padding: 6px 14px;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+}
+.hero__badge::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--clr-accent);
+  box-shadow: 0 0 8px var(--clr-accent);
+  animation: ping 2s ease-in-out infinite;
+}
+@keyframes ping {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(1.4); }
+}
+
+/* Título hero */
+.hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 7vw, 4.2rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--clr-text);
+}
+.hero__title span {
+  color: var(--clr-accent);
+}
+
+/* Subtítulo */
+.hero__subtitle {
+  font-size: 1rem;
+  color: var(--clr-muted);
+  max-width: 340px;
+  line-height: 1.6;
+}
+
+/* ---------- 3. BOTÃO PRIMÁRIO ---------- */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: var(--clr-accent);
+  color: #0d0d10;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-spring),
+    box-shadow var(--dur-fast) var(--ease-out);
+  box-shadow: 0 0 0 0 rgba(200, 240, 77, 0);
+  margin-top: var(--sp-xs);
+}
+.btn-primary:hover {
+  background: var(--clr-accent-dk);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(200, 240, 77, 0.25);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-primary__icon {
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* ---------- 4. OVERLAY ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-med) var(--ease-out);
+}
+.overlay.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ---------- 5. PAINEL DO FORMULÁRIO ---------- */
+.form-panel {
+  position: fixed;
+  inset-inline-end: 0;   /* fica à direita */
+  inset-block: 0;
+  width: min(480px, 100vw);
+  background: var(--clr-surface);
+  border-left: 1px solid var(--clr-border);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+  padding: var(--sp-lg);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform var(--dur-slow) var(--ease-out);
+  /* Sombra dramática à esquerda */
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
+}
+.form-panel.is-open {
+  transform: translateX(0);
+}
+
+/* Mobile: painel ocupa tela toda em altura */
+@media (max-width: 520px) {
+  .form-panel {
+    width: 100vw;
+    border-left: none;
+    border-top: 1px solid var(--clr-border);
+    inset-inline: 0;
+    inset-block-start: auto;
+    inset-block-end: 0;
+    height: 95dvh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: var(--sp-md);
+  }
+}
+
+/* Cabeçalho do painel */
+.form-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.form-panel__title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--clr-text);
+}
+
+/* Botão fechar */
+.btn-close {
+  display: grid;
+  place-items: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--clr-border);
+  background: transparent;
+  color: var(--clr-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.btn-close:hover {
+  background: var(--clr-border);
+  color: var(--clr-text);
+}
+
+/* ---------- 6. CAMPOS DO FORMULÁRIO ---------- */
+#paymentForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+}
+
+.field-input {
+  width: 100%;
+  padding: 13px 16px;
+  background: var(--clr-bg);
+  border: 1.5px solid var(--clr-border);
+  border-radius: var(--radius-sm);
+  color: var(--clr-text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  outline: none;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+  appearance: none;
+  -webkit-appearance: none;
+}
+.field-input::placeholder { color: #3e3e50; }
+.field-input:focus {
+  border-color: var(--clr-accent);
+  box-shadow: 0 0 0 3px rgba(200, 240, 77, 0.15);
+}
+.field-input.is-error {
+  border-color: var(--clr-error);
+  box-shadow: 0 0 0 3px rgba(255, 92, 114, 0.12);
+}
+
+/* Input de data: cor do ícone no iOS/Webkit */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+/* Select wrapper com seta customizada */
+.select-wrapper {
+  position: relative;
+}
+.field-select {
+  padding-right: 42px; /* espaço para a seta */
+  cursor: pointer;
+}
+.select-arrow {
+  position: absolute;
+  inset-inline-end: 14px;
+  top: 50%;
+  translate: 0 -50%;
+  color: var(--clr-muted);
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+/* Mensagem de erro por campo */
+.field-error {
+  font-size: 0.78rem;
+  color: var(--clr-error);
+  min-height: 1em;
+  display: block;
+}
+
+/* ---------- 7. BOTÃO ENVIAR ---------- */
+.btn-submit {
+  position: relative;
+  margin-top: var(--sp-xs);
+  padding: 15px;
+  background: var(--clr-accent);
+  color: #0d0d10;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    background var(--dur-fast),
+    transform var(--dur-fast) var(--ease-spring),
+    box-shadow var(--dur-fast);
+}
+.btn-submit:hover:not(:disabled) {
+  background: var(--clr-accent-dk);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(200, 240, 77, 0.2);
+}
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Loader dentro do botão */
+.btn-submit__loader {
+  display: none;
+  width: 18px; height: 18px;
+  border: 2px solid rgba(0,0,0,0.2);
+  border-top-color: #0d0d10;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  position: absolute;
+  top: 50%; left: 50%;
+  translate: -50% -50%;
+}
+.btn-submit.is-loading .btn-submit__text { opacity: 0; }
+.btn-submit.is-loading .btn-submit__loader { display: block; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- 8. MENSAGEM DE SUCESSO ---------- */
+.success-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-md);
+  text-align: center;
+  padding: var(--sp-lg) 0;
+  animation: successReveal var(--dur-med) var(--ease-spring) both;
+}
+@keyframes successReveal {
+  from { opacity: 0; scale: 0.9; }
+  to   { opacity: 1; scale: 1; }
+}
+
+.success-msg__icon {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: rgba(77, 223, 176, 0.12);
+  border: 2px solid var(--clr-success);
+  display: grid;
+  place-items: center;
+  font-size: 1.8rem;
+  color: var(--clr-success);
+}
+
+.success-msg__title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--clr-text);
+}
+.success-msg__body {
+  font-size: 0.9rem;
+  color: var(--clr-muted);
+  line-height: 1.6;
+}
+
+.btn-secondary {
+  padding: 12px 24px;
+  border: 1.5px solid var(--clr-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--clr-text);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color var(--dur-fast), background var(--dur-fast), transform var(--dur-fast) var(--ease-spring);
+}
+.btn-secondary:hover {
+  border-color: var(--clr-accent);
+  background: rgba(200, 240, 77, 0.08);
+  transform: translateY(-1px);
+}
+
+/* ---------- 9. UTILITÁRIOS / ACESSIBILIDADE ---------- */
+*:focus-visible {
+  outline: 2px solid var(--clr-accent);
+  outline-offset: 3px;
+}
+
+/* Ocultar elementos com [hidden] de forma acessível */
+[hidden] { display: none !important; }
+
+/* Scroll bar estilizada */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--clr-bg); }
+::-webkit-scrollbar-thumb { background: var(--clr-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--clr-muted); }
