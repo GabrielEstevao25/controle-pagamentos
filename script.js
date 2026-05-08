@@ -10,7 +10,7 @@
 // ============================================================
 
 /** URL do Web App publicado no Google Apps Script. */
-const SCRIPT_URL = "COLOCAR_URL_AQUI";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzCckMtn_SWLmQgxm3Jl4n78BkIAipH_IjG3EjEAxbKg4RSVGp-Z7seuNIDHdTDzS-/exec";
 
 
 // ============================================================
