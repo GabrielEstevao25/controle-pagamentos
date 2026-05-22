@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Pagamentos</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <main class="hero" id="heroScreen">
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-blob" aria-hidden="true"></div>
+
+    <div class="hero__content">
+      <div class="hero__badge">Sistema de Pagamentos</div>
+      <h1 class="hero__title">Registre seu<br /><span>pagamento</span></h1>
+      <p class="hero__subtitle">Atualize o status das suas parcelas de forma rápida e segura.</p>
+      <button class="btn-primary" id="openFormBtn" aria-label="Abrir formulário de pagamento">
+        <span class="btn-primary__icon" aria-hidden="true">＋</span>
+        Informar pagamento
+      </button>
+    </div>
+  </main>
+
+  <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+  <aside class="form-panel" id="formPanel" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+
+    <div class="form-panel__header">
+      <h2 class="form-panel__title" id="formTitle">Novo Pagamento</h2>
+      <button class="btn-close" id="closeFormBtn" aria-label="Fechar formulário">✕</button>
+    </div>
+
+    <form id="paymentForm" novalidate>
+
+      <div class="field-group">
+        <label class="field-label" for="fieldInstituicao">Instituição</label>
+        <div class="autocomplete-wrapper">
+          <input
+            class="field-input"
+            type="text"
+            id="fieldInstituicao"
+            name="instituicao"
+            placeholder="Digite para buscar..."
+            autocomplete="off"
+            required
+          />
+          <button type="button" class="autocomplete-toggle" id="toggleInstituicao" aria-label="Ver todas instituições" tabindex="-1">▾</button>
+          <ul class="autocomplete-list" id="instituicaoList" role="listbox" hidden></ul>
+        </div>
+        <span class="field-error" id="errorInstituicao" role="alert"></span>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="fieldName">Nome do Cliente</label>
+        <div class="select-wrapper">
+          <select class="field-input field-select" id="fieldName" name="nome" required disabled>
+            <option value="" disabled selected>Selecione a instituição primeiro</option>
+          </select>
+          <span class="select-arrow" aria-hidden="true">▾</span>
+        </div>
+        <span class="field-error" id="errorName" role="alert"></span>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="fieldData">Data de Recebimento</label>
+        <input
+          class="field-input"
+          type="date"
+          id="fieldData"
+          name="dataRecebimento"
+          required
+        />
+        <span class="field-error" id="errorData" role="alert"></span>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="fieldParcela">Nº da Parcela</label>
+        <input
+          class="field-input"
+          type="number"
+          id="fieldParcela"
+          name="parcela"
+          placeholder="Ex: 6"
+          min="1"
+          required
+        />
+        <span class="field-error" id="errorParcela" role="alert"></span>
+      </div>
+
+      <button class="btn-submit" type="submit" id="submitBtn">
+        <span class="btn-submit__text">Enviar pagamento</span>
+        <span class="btn-submit__loader" aria-hidden="true"></span>
+      </button>
+
+    </form>
+
+    <div class="success-msg" id="successMsg" aria-live="polite" hidden>
+      <div class="success-msg__icon" aria-hidden="true">✓</div>
+      <h3 class="success-msg__title">Pagamento registrado!</h3>
+      <p class="success-msg__body">Os dados foram enviados e a planilha foi atualizada com sucesso.</p>
+      <button class="btn-secondary" id="newPaymentBtn">Registrar outro</button>
+    </div>
+
+  </aside>
+
+  <script src="script.js"></script>
+</body>
+</html>
