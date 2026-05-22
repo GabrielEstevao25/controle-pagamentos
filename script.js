@@ -408,21 +408,7 @@ fieldName.addEventListener("change",     () => clearError(fieldName,      errorN
 // 14. EVENT LISTENERS
 // ============================================================
 
-// ============================================================
-// 15. UTILITÁRIOS
-// ============================================================
-
-function formatarMoeda(valor) {
-  // Remove "R$", espaços, pontos de milhar e troca vírgula decimal por ponto
-  var limpo = String(valor)
-    .replace(/R\$\s*/g, '')
-    .trim()
-    .replace(/\./g, '')
-    .replace(',', '.');
-  var num = parseFloat(limpo);
-  if (isNaN(num)) return valor;
-  return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
+openFormBtn.addEventListener("click", openPanel);
 closeFormBtn.addEventListener("click", closePanel);
 overlay.addEventListener("click", closePanel);
 
@@ -442,3 +428,19 @@ newPaymentBtn.addEventListener("click", () => {
   resetParcelas();
   setTimeout(() => fieldInstituicao.focus(), 50);
 });
+
+// ============================================================
+// 15. UTILITÁRIOS
+// ============================================================
+
+function formatarMoeda(valor) {
+  // Remove "R$", espaços, pontos de milhar e troca vírgula decimal por ponto
+  var limpo = String(valor)
+    .replace(/R\$\s*/g, '')
+    .trim()
+    .replace(/\./g, '')
+    .replace(',', '.');
+  var num = parseFloat(limpo);
+  if (isNaN(num)) return valor;
+  return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
