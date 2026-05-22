@@ -193,12 +193,14 @@ function getParcelasEmAberto(instituicao, cliente) {
     var idxData       = -1;
     var idxVencimento = -1;
 
+    var idxSaldo = -1;
     for (var c = 0; c < cabecalho.length; c++) {
       var h = String(cabecalho[c]).trim();
       if (h === COL_PARCELA)          idxParcela    = c;
       if (h === COL_VALOR)            idxValor      = c;
       if (h === COL_DATA_RECEBIMENTO) idxData       = c;
       if (h === 'Vencimento')         idxVencimento = c;
+      if (h === COL_SALDO_ACUMULADO)  idxSaldo      = c;
     }
 
     if (idxParcela < 0 || idxValor < 0 || idxData < 0) {
@@ -236,8 +238,20 @@ function getParcelasEmAberto(instituicao, cliente) {
     // Ordena pela parcela mais antiga primeiro
     parcelas.sort(function(a, b) { return a.parcela - b.parcela; });
 
+    // Busca o saldo acumulado mais recente (última linha preenchida na coluna L)
+    var saldoAtual = null;
+    if (idxSaldo >= 0) {
+      for (var s = dados.length - 1; s >= headerIndex + 1; s--) {
+        var saldoVal = dados[s][idxSaldo];
+        if (saldoVal !== '' && saldoVal !== null && !isNaN(parseFloat(saldoVal))) {
+          saldoAtual = parseFloat(saldoVal);
+          break;
+        }
+      }
+    }
+
     return ContentService
-      .createTextOutput(JSON.stringify({ status: "ok", data: parcelas }))
+      .createTextOutput(JSON.stringify({ status: "ok", data: parcelas, saldo: saldoAtual }))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {

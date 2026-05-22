@@ -565,3 +565,35 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: var(--clr-success);
   text-align: right;
 }
+
+/* ---------- 12. SALDO ACUMULADO ---------- */
+.parcela-saldo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  margin-top: 4px;
+  border: 1px dashed var(--clr-border);
+}
+
+.parcela-saldo__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+}
+
+.parcela-saldo__valor {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.parcela-saldo.is-positive .parcela-saldo__valor {
+  color: var(--clr-success);
+}
+
+.parcela-saldo.is-negative .parcela-saldo__valor {
+  color: var(--clr-error);
+}

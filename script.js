@@ -227,7 +227,7 @@ async function carregarParcelas(instituicao, cliente) {
     const data = await res.json();
 
     if (data.status === "ok" && data.data.length > 0) {
-      renderParcelas(data.data);
+      renderParcelas(data.data, data.saldo);
     } else if (data.status === "ok" && data.data.length === 0) {
       parcelasList.innerHTML = '<p class="parcelas-empty">Nenhuma parcela em aberto.</p>';
     } else {
@@ -239,7 +239,7 @@ async function carregarParcelas(instituicao, cliente) {
   }
 }
 
-function renderParcelas(parcelas) {
+function renderParcelas(parcelas, saldo) {
   parcelasList.innerHTML = "";
 
   parcelas.forEach((p, index) => {
@@ -263,6 +263,18 @@ function renderParcelas(parcelas) {
       parcelaSelecionada = p;
     }
   });
+
+  // Exibe saldo acumulado mais recente
+  if (saldo !== null && saldo !== undefined) {
+    const saldoEl = document.createElement("div");
+    const positivo = saldo >= 0;
+    saldoEl.className = "parcela-saldo " + (positivo ? "is-positive" : "is-negative");
+    saldoEl.innerHTML = `
+      <span class="parcela-saldo__label">Saldo atual</span>
+      <span class="parcela-saldo__valor">${formatarMoeda(saldo)}</span>
+    `;
+    parcelasList.appendChild(saldoEl);
+  }
 
   clearError(null, errorParcela);
 }
