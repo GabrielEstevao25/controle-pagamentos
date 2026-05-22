@@ -232,7 +232,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Monta a mensagem de WhatsApp\n// Se houver inadimplências, adiciona o bloco de parcelas em atraso\n\nconst item = $input.item.json;\n\nconst nome = item['Nome:'] ?? '';\nconst parcela = item['Parcelas'] ?? '';\nconst valor = item['Valor'] ?? '';\nconst vencimento = item['Vencimento'] ?? '';\nconst contato = '55' + String(item['Contato:'] ?? '').trim();\nconst inadimplentes = item['_inadimplentes'] || [];\n\nlet mensagem = `Caro(a) ${nome}, tudo bem?\\n\\nPassando para te lembrar da parcela Nº${parcela}, no valor de ${valor}, que tem vencimento ${vencimento}.`;\n\nif (inadimplentes.length > 0) {\n  mensagem += `\\n\\nAlém disso, identificamos parcelas anteriores em aberto:`;\n  for (const p of inadimplentes) {\n    mensagem += `\\n- Parcela Nº${p.parcela} — ${p.valor} — vencida em ${p.vencimento}`;\n  }\n  mensagem += `\\n\\nPor favor, entre em contato para regularizarmos a situação.`;\n}\n\nreturn [{\n  json: {\n    numero: contato,\n    mensagem: mensagem\n  }\n}];"
+        "jsCode": "const item = $input.item.json;\n\nconst nome = item['Nome:'] ?? '';\nconst parcela = item['Parcelas'] ?? '';\nconst valor = item['Valor'] ?? '';\nconst vencimento = item['Vencimento'] ?? '';\nconst contato = '55' + String(item['Contato:'] ?? '').trim();\nconst inadimplentes = item['_inadimplentes'] || [];\n\nlet mensagem = `Bom dia, ${nome}. Informamos que a ${parcela}ª parcela do seu acordo, no valor de ${valor}, vence hoje, ${vencimento}.\\n\\nO cumprimento do prazo é essencial para a manutenção dos termos acordados entre as partes.`;\n\nif (inadimplentes.length > 0) {\n  mensagem += `\\n\\nAlém disso, identificamos parcelas anteriores em aberto:`;\n  for (const p of inadimplentes) {\n    mensagem += `\\n- Parcela Nº${p.parcela} — ${p.valor} — vencida em ${p.vencimento}`;\n  }\n  mensagem += `\\n\\nPor favor, entre em contato para regularizarmos a situação.`;\n}\n\nmensagem += `\\n\\nAtenciosamente,\\nViana Advocacia.`;\n\nreturn [{\n  json: {\n    numero: contato,\n    mensagem: mensagem\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -466,7 +466,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "572d5489-606a-4aac-bca8-b6956ce27214",
+  "versionId": "0a36c3a1-f030-4c09-a076-4b5fe3858efa",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4e4ac99137c05fecad88742c4a42e4efeed578d59d2108dea632ee0d47c72e8c"

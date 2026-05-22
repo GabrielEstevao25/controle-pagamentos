@@ -39,6 +39,7 @@
 
     <form id="paymentForm" novalidate>
 
+      <!-- INSTITUIÇÃO -->
       <div class="field-group">
         <label class="field-label" for="fieldInstituicao">Instituição</label>
         <div class="autocomplete-wrapper">
@@ -57,6 +58,7 @@
         <span class="field-error" id="errorInstituicao" role="alert"></span>
       </div>
 
+      <!-- NOME DO CLIENTE -->
       <div class="field-group">
         <label class="field-label" for="fieldName">Nome do Cliente</label>
         <div class="select-wrapper">
@@ -68,6 +70,16 @@
         <span class="field-error" id="errorName" role="alert"></span>
       </div>
 
+      <!-- PARCELAS EM ABERTO -->
+      <div class="field-group" id="groupParcela">
+        <label class="field-label">Parcela</label>
+        <div class="parcelas-list" id="parcelasList">
+          <p class="parcelas-empty">Selecione o cliente para ver as parcelas em aberto.</p>
+        </div>
+        <span class="field-error" id="errorParcela" role="alert"></span>
+      </div>
+
+      <!-- DATA DE RECEBIMENTO -->
       <div class="field-group">
         <label class="field-label" for="fieldData">Data de Recebimento</label>
         <input
@@ -80,18 +92,20 @@
         <span class="field-error" id="errorData" role="alert"></span>
       </div>
 
+      <!-- VALOR PAGO -->
       <div class="field-group">
-        <label class="field-label" for="fieldParcela">Nº da Parcela</label>
+        <label class="field-label" for="fieldValorPago">Valor Pago (R$)</label>
         <input
           class="field-input"
           type="number"
-          id="fieldParcela"
-          name="parcela"
-          placeholder="Ex: 6"
-          min="1"
+          id="fieldValorPago"
+          name="valorPago"
+          placeholder="Ex: 500.00"
+          min="0"
+          step="0.01"
           required
         />
-        <span class="field-error" id="errorParcela" role="alert"></span>
+        <span class="field-error" id="errorValorPago" role="alert"></span>
       </div>
 
       <button class="btn-submit" type="submit" id="submitBtn">

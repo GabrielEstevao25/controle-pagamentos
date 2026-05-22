@@ -25,13 +25,15 @@ const fieldInstituicao  = document.getElementById("fieldInstituicao");
 const toggleInstituicao = document.getElementById("toggleInstituicao");
 const instituicaoList   = document.getElementById("instituicaoList");
 const fieldName         = document.getElementById("fieldName");
+const parcelasList      = document.getElementById("parcelasList");
 const fieldData         = document.getElementById("fieldData");
-const fieldParcela      = document.getElementById("fieldParcela");
+const fieldValorPago    = document.getElementById("fieldValorPago");
 
 const errorInstituicao  = document.getElementById("errorInstituicao");
 const errorName         = document.getElementById("errorName");
-const errorData         = document.getElementById("errorData");
 const errorParcela      = document.getElementById("errorParcela");
+const errorData         = document.getElementById("errorData");
+const errorValorPago    = document.getElementById("errorValorPago");
 
 // ============================================================
 // 3. ESTADO
@@ -39,6 +41,7 @@ const errorParcela      = document.getElementById("errorParcela");
 
 let todasInstituicoes      = [];
 let instituicaoSelecionada = null;
+let parcelaSelecionada     = null; // { parcela, valor }
 
 // ============================================================
 // 4. ABERTURA E FECHAMENTO DO PAINEL
@@ -66,7 +69,9 @@ function resetPanel() {
   clearAllErrors();
   showForm();
   instituicaoSelecionada = null;
+  parcelaSelecionada     = null;
   resetClientes();
+  resetParcelas();
   fecharAutocomplete();
 }
 
@@ -111,6 +116,7 @@ fieldInstituicao.addEventListener("input", () => {
   if (instituicaoSelecionada && fieldInstituicao.value !== instituicaoSelecionada) {
     instituicaoSelecionada = null;
     resetClientes();
+    resetParcelas();
   }
 
   if (!termo) {
@@ -154,6 +160,7 @@ async function selecionarInstituicao(nome) {
   instituicaoSelecionada = nome;
   fecharAutocomplete();
   clearError(fieldInstituicao, errorInstituicao);
+  resetParcelas();
   await carregarClientes(nome);
 }
 
@@ -198,8 +205,81 @@ function resetClientes() {
   fieldName.innerHTML = '<option value="" disabled selected>Selecione a instituição primeiro</option>';
 }
 
+fieldName.addEventListener("change", async () => {
+  clearError(fieldName, errorName);
+  parcelaSelecionada = null;
+  const cliente = fieldName.value;
+  if (cliente && instituicaoSelecionada) {
+    await carregarParcelas(instituicaoSelecionada, cliente);
+  }
+});
+
 // ============================================================
-// 9. VALIDAÇÃO
+// 9. CARREGA E RENDERIZA PARCELAS EM ABERTO
+// ============================================================
+
+async function carregarParcelas(instituicao, cliente) {
+  parcelasList.innerHTML = '<p class="parcelas-empty">Carregando parcelas...</p>';
+  parcelaSelecionada = null;
+
+  try {
+    const res  = await fetch(`${SCRIPT_URL}?action=parcelas&instituicao=${encodeURIComponent(instituicao)}&cliente=${encodeURIComponent(cliente)}`);
+    const data = await res.json();
+
+    if (data.status === "ok" && data.data.length > 0) {
+      renderParcelas(data.data);
+    } else if (data.status === "ok" && data.data.length === 0) {
+      parcelasList.innerHTML = '<p class="parcelas-empty">Nenhuma parcela em aberto.</p>';
+    } else {
+      parcelasList.innerHTML = '<p class="parcelas-empty">Erro ao carregar parcelas.</p>';
+    }
+  } catch (err) {
+    console.error("Erro ao carregar parcelas:", err);
+    parcelasList.innerHTML = '<p class="parcelas-empty">Erro ao carregar parcelas.</p>';
+  }
+}
+
+function renderParcelas(parcelas) {
+  parcelasList.innerHTML = "";
+
+  parcelas.forEach((p, index) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "parcela-item" + (index === 0 ? " is-selected" : "");
+    btn.dataset.parcela = p.parcela;
+    btn.dataset.valor   = p.valor;
+
+    btn.innerHTML = `
+      <span class="parcela-item__num">Parcela Nº${p.parcela}</span>
+      <span class="parcela-item__valor">${p.valor}</span>
+    `;
+
+    btn.addEventListener("click", () => selecionarParcela(btn, p));
+    parcelasList.appendChild(btn);
+
+    // Pré-seleciona a primeira (mais antiga)
+    if (index === 0) {
+      parcelaSelecionada = p;
+    }
+  });
+
+  clearError(null, errorParcela);
+}
+
+function selecionarParcela(btn, parcela) {
+  document.querySelectorAll(".parcela-item").forEach(b => b.classList.remove("is-selected"));
+  btn.classList.add("is-selected");
+  parcelaSelecionada = parcela;
+  clearError(null, errorParcela);
+}
+
+function resetParcelas() {
+  parcelaSelecionada = null;
+  parcelasList.innerHTML = '<p class="parcelas-empty">Selecione o cliente para ver as parcelas em aberto.</p>';
+}
+
+// ============================================================
+// 10. VALIDAÇÃO
 // ============================================================
 
 function validateInstituicao() {
@@ -221,39 +301,50 @@ function validateField(input, errorEl, message) {
   return true;
 }
 
+function validateParcela() {
+  if (!parcelaSelecionada) {
+    errorParcela.textContent = "Selecione uma parcela.";
+    return false;
+  }
+  errorParcela.textContent = "";
+  return true;
+}
+
 function setError(input, errorEl, message) {
-  input.classList.add("is-error");
+  if (input) input.classList.add("is-error");
   errorEl.textContent = message;
 }
 
 function clearError(input, errorEl) {
-  input.classList.remove("is-error");
-  errorEl.textContent = "";
+  if (input) input.classList.remove("is-error");
+  if (errorEl) errorEl.textContent = "";
 }
 
 function clearAllErrors() {
   clearError(fieldInstituicao, errorInstituicao);
   clearError(fieldName,        errorName);
+  clearError(null,             errorParcela);
   clearError(fieldData,        errorData);
-  clearError(fieldParcela,     errorParcela);
+  clearError(fieldValorPago,   errorValorPago);
 }
 
 function validateAll() {
   const v1 = validateInstituicao();
-  const v2 = validateField(fieldName,    errorName,    "Selecione o cliente.");
-  const v3 = validateField(fieldData,    errorData,    "Informe a data de recebimento.");
-  const v4 = validateField(fieldParcela, errorParcela, "Informe o número da parcela.");
+  const v2 = validateField(fieldName,      errorName,      "Selecione o cliente.");
+  const v3 = validateParcela();
+  const v4 = validateField(fieldData,      errorData,      "Informe a data de recebimento.");
+  const v5 = validateField(fieldValorPago, errorValorPago, "Informe o valor pago.");
 
-  if (v4 && (parseInt(fieldParcela.value) < 1 || isNaN(parseInt(fieldParcela.value)))) {
-    setError(fieldParcela, errorParcela, "A parcela deve ser um número maior que zero.");
+  if (v5 && parseFloat(fieldValorPago.value) < 0) {
+    setError(fieldValorPago, errorValorPago, "O valor pago não pode ser negativo.");
     return false;
   }
 
-  return v1 && v2 && v3 && v4;
+  return v1 && v2 && v3 && v4 && v5;
 }
 
 // ============================================================
-// 10. LOADING
+// 11. LOADING
 // ============================================================
 
 function setLoading(isLoading) {
@@ -263,7 +354,7 @@ function setLoading(isLoading) {
 }
 
 // ============================================================
-// 11. ENVIO DO FORMULÁRIO
+// 12. ENVIO DO FORMULÁRIO
 // ============================================================
 
 async function handleSubmit(e) {
@@ -274,7 +365,8 @@ async function handleSubmit(e) {
     nome:            fieldName.value,
     instituicao:     instituicaoSelecionada,
     dataRecebimento: fieldData.value,
-    parcela:         parseInt(fieldParcela.value, 10),
+    parcela:         parcelaSelecionada.parcela,
+    valorPago:       parseFloat(fieldValorPago.value),
   };
 
   console.log("📤 Enviando payload:", payload);
@@ -304,15 +396,15 @@ async function handleSubmit(e) {
 }
 
 // ============================================================
-// 12. LIMPA ERRO AO INTERAGIR
+// 13. LIMPA ERRO AO INTERAGIR
 // ============================================================
 
-fieldData.addEventListener("input",    () => clearError(fieldData,    errorData));
-fieldParcela.addEventListener("input", () => clearError(fieldParcela, errorParcela));
-fieldName.addEventListener("change",   () => clearError(fieldName,    errorName));
+fieldData.addEventListener("input",      () => clearError(fieldData,      errorData));
+fieldValorPago.addEventListener("input", () => clearError(fieldValorPago, errorValorPago));
+fieldName.addEventListener("change",     () => clearError(fieldName,      errorName));
 
 // ============================================================
-// 13. EVENT LISTENERS
+// 14. EVENT LISTENERS
 // ============================================================
 
 openFormBtn.addEventListener("click", openPanel);
@@ -330,6 +422,8 @@ newPaymentBtn.addEventListener("click", () => {
   clearAllErrors();
   showForm();
   instituicaoSelecionada = null;
+  parcelaSelecionada     = null;
   resetClientes();
+  resetParcelas();
   setTimeout(() => fieldInstituicao.focus(), 50);
 });
