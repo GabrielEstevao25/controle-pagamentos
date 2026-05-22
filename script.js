@@ -251,7 +251,8 @@ function renderParcelas(parcelas) {
 
     btn.innerHTML = `
       <span class="parcela-item__num">Parcela Nº${p.parcela}</span>
-      <span class="parcela-item__valor">${p.valor}</span>
+      <span class="parcela-item__venc">${p.vencimento || ''}</span>
+      <span class="parcela-item__valor">${formatarMoeda(p.valor)}</span>
     `;
 
     btn.addEventListener("click", () => selecionarParcela(btn, p));
@@ -407,7 +408,21 @@ fieldName.addEventListener("change",     () => clearError(fieldName,      errorN
 // 14. EVENT LISTENERS
 // ============================================================
 
-openFormBtn.addEventListener("click", openPanel);
+// ============================================================
+// 15. UTILITÁRIOS
+// ============================================================
+
+function formatarMoeda(valor) {
+  // Remove "R$", espaços, pontos de milhar e troca vírgula decimal por ponto
+  var limpo = String(valor)
+    .replace(/R\$\s*/g, '')
+    .trim()
+    .replace(/\./g, '')
+    .replace(',', '.');
+  var num = parseFloat(limpo);
+  if (isNaN(num)) return valor;
+  return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
 closeFormBtn.addEventListener("click", closePanel);
 overlay.addEventListener("click", closePanel);
 
