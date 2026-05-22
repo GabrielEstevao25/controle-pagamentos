@@ -188,15 +188,17 @@ function getParcelasEmAberto(instituicao, cliente) {
     }
 
     var cabecalho = dados[headerIndex];
-    var idxParcela = -1;
-    var idxValor   = -1;
-    var idxData    = -1;
+    var idxParcela    = -1;
+    var idxValor      = -1;
+    var idxData       = -1;
+    var idxVencimento = -1;
 
     for (var c = 0; c < cabecalho.length; c++) {
       var h = String(cabecalho[c]).trim();
-      if (h === COL_PARCELA)          idxParcela = c;
-      if (h === COL_VALOR)            idxValor   = c;
-      if (h === COL_DATA_RECEBIMENTO) idxData    = c;
+      if (h === COL_PARCELA)          idxParcela    = c;
+      if (h === COL_VALOR)            idxValor      = c;
+      if (h === COL_DATA_RECEBIMENTO) idxData       = c;
+      if (h === 'Vencimento')         idxVencimento = c;
     }
 
     if (idxParcela < 0 || idxValor < 0 || idxData < 0) {
@@ -213,11 +215,21 @@ function getParcelasEmAberto(instituicao, cliente) {
       var dataRecebimento = String(row[idxData] ?? '').trim();
       if (dataRecebimento !== '') continue; // já foi pago, pula
 
-      var valor = String(row[idxValor] ?? '').trim();
+      var valor      = String(row[idxValor] ?? '').trim();
+      var vencimento = idxVencimento >= 0 ? String(row[idxVencimento] ?? '').trim() : '';
+
+      // Se vier como objeto Date do Sheets, formata para dd/mm/yyyy
+      if (row[idxVencimento] instanceof Date) {
+        var d = row[idxVencimento];
+        vencimento = String(d.getDate()).padStart(2,'0') + '/' +
+                     String(d.getMonth()+1).padStart(2,'0') + '/' +
+                     d.getFullYear();
+      }
 
       parcelas.push({
-        parcela: parseInt(numParcela, 10),
-        valor: valor
+        parcela:    parseInt(numParcela, 10),
+        valor:      valor,
+        vencimento: vencimento
       });
     }
 
@@ -320,9 +332,11 @@ function atualizarParcela(sheet, numeroParcela, dataRecebimento, valorPago) {
       // Grava data de recebimento
       sheet.getRange(r + 1, idxData + 1).setValue(formatarData(dataRecebimento));
 
-      // Grava valor pago (coluna K)
+      // Grava valor pago (coluna K) com formato de moeda
       if (idxValorPago >= 0) {
-        sheet.getRange(r + 1, idxValorPago + 1).setValue(valorPago);
+        sheet.getRange(r + 1, idxValorPago + 1)
+          .setValue(valorPago)
+          .setNumberFormat('R$ #,##0.00');
       }
 
       // Calcula e grava saldo acumulado (coluna L)
@@ -343,7 +357,9 @@ function atualizarParcela(sheet, numeroParcela, dataRecebimento, valorPago) {
         var diferenca = valorPago - valorDevido;
         var novoSaldo = saldoAnterior + diferenca;
 
-        sheet.getRange(r + 1, idxSaldo + 1).setValue(novoSaldo);
+        sheet.getRange(r + 1, idxSaldo + 1)
+          .setValue(novoSaldo)
+          .setNumberFormat('R$ #,##0.00');
       }
 
       Logger.log("Parcela " + numeroParcela + " atualizada na linha " + (r + 1));
