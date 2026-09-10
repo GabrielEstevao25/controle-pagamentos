@@ -1,0 +1,548 @@
+{
+  "name": "Operacional Viana",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Agrupar por spreadsheet_id\nconst porPlanilha = {};\nfor (const item of items) {\n  const sid = item.json.spreadsheet_id;\n  const sht = item.json.sheet_title;\n  if (!porPlanilha[sid]) {\n    porPlanilha[sid] = [];\n  }\n  porPlanilha[sid].push(sht);\n}\n\n// Criar lotes de 5 abas por planilha\nconst lotes = [];\nfor (const [spreadsheet_id, sheetTitles] of Object.entries(porPlanilha)) {\n  const batchSize = 5;\n  for (let i = 0; i < sheetTitles.length; i += batchSize) {\n    const batch = sheetTitles.slice(i, i + batchSize);\n    const rangesQuery = batch.map(t => 'ranges=' + encodeURIComponent(t)).join('&');\n    \n    lotes.push({\n      json: {\n        spreadsheet_id: spreadsheet_id,\n        sheet_titles: batch,\n        ranges_query: rangesQuery\n      }\n    });\n  }\n}\n\nreturn lotes;"
+      },
+      "id": "c9a36518-7e7a-4a58-b682-19da52aac941",
+      "name": "Agrupa abas em lotes5",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1456,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.spreadsheet_id }}/values:batchGet?{{ $json.ranges_query }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "options": {}
+      },
+      "id": "867e5a92-3db7-419a-9596-e86fd5ac3f1a",
+      "name": "Le as linhas em lotes5",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1184,
+        -16
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "yxSuy26Zqq6jaB1k",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const todosOsLotes = $input.all();\nconst resultado = [];\n\nfor (const lote of todosOsLotes) {\n  const resposta = lote.json;\n  const spreadsheet_id = resposta.spreadsheetId;\n  const valueRanges = resposta.valueRanges || [];\n  \n  for (const vr of valueRanges) {\n    const sheetName = vr.range.split('!')[0];\n    resultado.push({\n      json: {\n        spreadsheet_id: spreadsheet_id,\n        sheet_title: sheetName,\n        values: vr.values || []\n      }\n    });\n  }\n}\n\nreturn resultado;"
+      },
+      "id": "37c007ef-05a5-4cee-8c29-620cb01d329b",
+      "name": "Expande resultado batchGet5",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.spreadsheet_id }}/values/{{ encodeURIComponent($json.sheet_title) }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "options": {}
+      },
+      "id": "d56c6c53-acb7-4d6d-b7a0-3b7f8ff272b6",
+      "name": "Le as linhas5 (OLD - não conectado)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1424,
+        976
+      ],
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "kWmaGimBeC3PALAO",
+          "name": "Google account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://brasilapi.com.br/api/feriados/v1/{{ $now.setZone(\"America/Sao_Paulo\").year }}",
+        "options": {}
+      },
+      "id": "9b610751-d492-432e-811f-0bbba945882e",
+      "name": "Busca feriados",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1376,
+        -240
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ccedb63b-f6c2-4760-bb37-08b23c3e26c1",
+      "name": "Merge feriados e linhas",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -144,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Separa feriados dos dados da planilha\nconst feriados = items.filter(i => i.json.date && i.json.name);\nconst linhas = items.filter(i => i.json['Vencimento']);\n\nconst feriadosSet = new Set(feriados.map(f => f.json.date));\n\nfunction isWeekendOrHoliday(date) {\n  const day = date.getDay();\n  const yyyy = date.getFullYear();\n  const mm = String(date.getMonth() + 1).padStart(2, '0');\n  const dd = String(date.getDate()).padStart(2, '0');\n  const iso = `${yyyy}-${mm}-${dd}`;\n  return day === 0 || day === 6 || feriadosSet.has(iso);\n}\n\nfunction parseBR(dateStr) {\n  const [d, m, y] = String(dateStr).split('/');\n  return new Date(Number(y), Number(m) - 1, Number(d));\n}\n\nfunction formatBR(date) {\n  const dd = String(date.getDate()).padStart(2, '0');\n  const mm = String(date.getMonth() + 1).padStart(2, '0');\n  const yyyy = date.getFullYear();\n  return `${dd}/${mm}/${yyyy}`;\n}\n\nconst paraAjustar = [];\nconst paraEnviar = [];\n\nfor (const item of linhas) {\n  const vencimento = item.json['Vencimento'];\n  if (!vencimento) continue;\n\n  const date = parseBR(vencimento);\n\n  if (isWeekendOrHoliday(date)) {\n    let novaData = new Date(date);\n    do {\n      novaData.setDate(novaData.getDate() + 1);\n    } while (isWeekendOrHoliday(novaData));\n\n    paraAjustar.push({\n      json: {\n        ...item.json,\n        Vencimento: formatBR(novaData),\n        _precisa_ajustar: true\n      }\n    });\n  } else {\n    paraEnviar.push({\n      json: {\n        ...item.json,\n        _precisa_ajustar: false\n      }\n    });\n  }\n}\n\nreturn [...paraAjustar, ...paraEnviar];"
+      },
+      "id": "6a4ba7c6-1eda-425c-afe0-13969a50cdb9",
+      "name": "Verifica dia util",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-ajustar",
+              "leftValue": "={{ $json._precisa_ajustar }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "33edd256-10a9-4820-af31-1d600f63e484",
+      "name": "Precisa ajustar data",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.spreadsheet_id }}/values/{{ encodeURIComponent($json.sheet_title) }}!B{{ $json.row_number }}?valueInputOption=USER_ENTERED",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ range: $json.sheet_title + '!B' + $json.row_number, majorDimension: 'ROWS', values: [[$json.Vencimento]] }) }}",
+        "options": {}
+      },
+      "id": "ce5c4bc5-a971-4988-af7a-edaceaf06616",
+      "name": "Atualiza vencimento na planilha",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        608,
+        -304
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "yxSuy26Zqq6jaB1k",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "Operacional Viana",
+        "filter": {},
+        "options": {}
+      },
+      "id": "71b5b352-5836-4c32-bfe5-a66eba44127d",
+      "name": "Pega a pasta",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -2368,
+        -16
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "yxSuy26Zqq6jaB1k",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "=\"{{$json.id}}\" in parents\nand mimeType = \"application/vnd.google-apps.spreadsheet\"\nand trashed = false",
+        "filter": {},
+        "options": {}
+      },
+      "id": "f17bddf2-5f7b-4b45-86ad-068b06277d92",
+      "name": "Pega as planilhas",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -2160,
+        -16
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "yxSuy26Zqq6jaB1k",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.id }}?fields=spreadsheetId,sheets(properties(title))",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "options": {}
+      },
+      "id": "97e95ec3-73c9-4d89-8e10-5ced1746785f",
+      "name": "Pega as abas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1936,
+        -16
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "yxSuy26Zqq6jaB1k",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recebe N itens (um por planilha), cada um com spreadsheetId e sheets[]\n// Expande para um item por aba\nconst resultado = [];\nfor (const item of $input.all()) {\n  const spreadsheetId = item.json.spreadsheetId;\n  const sheets = item.json.sheets || [];\n  for (const sheet of sheets) {\n    resultado.push({\n      json: {\n        spreadsheet_id: spreadsheetId,\n        sheet_title: sheet.properties.title\n      }\n    });\n  }\n}\nreturn resultado;"
+      },
+      "id": "04804773-56de-4838-b300-1ba6a321b951",
+      "name": "Expande abas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1696,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resultado = [];\nconst todosItens = $input.all();\n\nfor (let idx = 0; idx < todosItens.length; idx++) {\n  const item = todosItens[idx];\n  const rows = item.json.values || [];\n\n  // Pega spreadsheet_id e sheet_title do Expande abas pelo mesmo índice\n  const aba = $('Expande abas').all()[idx];\n  const spreadsheetId = aba ? aba.json.spreadsheet_id : '';\n  const sheetTitle = aba ? aba.json.sheet_title : '';\n\n  // Busca dinamicamente a linha de headers\n  let headerIndex = -1;\n  for (let i = 0; i < rows.length; i++) {\n    if (rows[i].some(c => String(c).trim() === 'Vencimento' || String(c).trim() === 'Parcelas')) {\n      headerIndex = i;\n      break;\n    }\n  }\n  if (headerIndex === -1) continue;\n\n  const headers = rows[headerIndex];\n  const dataRows = rows.slice(headerIndex + 1);\n\n  for (let rowIdx = 0; rowIdx < dataRows.length; rowIdx++) {\n    const row = dataRows[rowIdx];\n    const primeira = String(row[0] ?? '').trim().toUpperCase();\n    if (primeira === 'TOTAL' || primeira === '') continue;\n\n    const obj = {};\n    headers.forEach((h, i) => {\n      obj[String(h).trim()] = row[i] ?? '';\n    });\n\n    resultado.push({\n      json: {\n        ...obj,\n        spreadsheet_id: spreadsheetId,\n        sheet_title: sheetTitle,\n        row_number: headerIndex + rowIdx + 2\n      }\n    });\n  }\n}\nreturn resultado;"
+      },
+      "id": "57c0c428-9c16-496a-bf68-8d4bd509762b",
+      "name": "Mapeia colunas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -768,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nó: Filtra vencimento hoje e verifica inadimplência\n// Recebe todas as linhas mapeadas e:\n// 1. Filtra apenas os clientes com vencimento HOJE e sem data de recebimento\n// 2. Para cada um, verifica se o mesmo contato tem parcelas ANTERIORES vencidas e não pagas\n// 3. Anexa a lista de inadimplências ao item\n\nconst todasLinhas = $input.all();\n\nconst hoje = $now.setZone('America/Sao_Paulo').toFormat('dd/MM/yyyy');\n\nfunction parseBR(dateStr) {\n  const parts = String(dateStr).split('/');\n  if (parts.length !== 3) return null;\n  return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));\n}\n\nconst dataHoje = parseBR(hoje);\n\n// Filtra linhas com vencimento hoje e sem recebimento\nconst vencemHoje = todasLinhas.filter(i => {\n  return (\n    String(i.json['Vencimento']).trim() === hoje &&\n    String(i.json['Data recebimento'] ?? '').trim() === ''\n  );\n});\n\nif (vencemHoje.length === 0) return [];\n\n// Para cada linha que vence hoje, busca inadimplências do mesmo contato\nconst resultado = [];\n\nfor (const itemHoje of vencemHoje) {\n  const contato = String(itemHoje.json['Contato:'] ?? '').trim();\n  const spreadsheetId = itemHoje.json.spreadsheet_id;\n  const sheetTitle = itemHoje.json.sheet_title;\n\n  // Busca parcelas anteriores vencidas e não pagas do mesmo contato e mesma aba\n  const inadimplentes = todasLinhas.filter(i => {\n    const mesmaPlanilha = i.json.spreadsheet_id === spreadsheetId && i.json.sheet_title === sheetTitle;\n    const mesmoContato = String(i.json['Contato:'] ?? '').trim() === contato;\n    const semRecebimento = String(i.json['Data recebimento'] ?? '').trim() === '';\n    const venc = i.json['Vencimento'];\n    if (!venc || !mesmaPlanilha || !mesmoContato || !semRecebimento) return false;\n    const dataVenc = parseBR(venc);\n    if (!dataVenc) return false;\n    // Apenas parcelas com vencimento ANTERIOR a hoje (não inclui a de hoje)\n    return dataVenc < dataHoje;\n  });\n\n  // Monta lista de inadimplências como array simples para uso no próximo nó\n  const listaInadimplentes = inadimplentes.map(i => ({\n    parcela: i.json['Parcelas'],\n    valor: i.json['Valor'],\n    vencimento: i.json['Vencimento']\n  }));\n\n  resultado.push({\n    json: {\n      ...itemHoje.json,\n      _inadimplentes: listaInadimplentes\n    }\n  });\n}\n\nreturn resultado;"
+      },
+      "id": "20db1f37-bdbb-4a5f-a887-a2d388102070",
+      "name": "Filtra vencimento hoje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Processa TODOS os items de entrada\nconst resultado = [];\n\nfor (const item of $input.all()) {\n  const nome = item.json['Nome:'] ?? '';\n  const parcela = item.json['Parcelas'] ?? '';\n  const valor = item.json['Valor'] ?? '';\n  const vencimento = item.json['Vencimento'] ?? '';\n  const contato = '55' + String(item.json['Contato:'] ?? '').trim();\n  const inadimplentes = item.json['_inadimplentes'] || [];\n\n  let mensagem = `Bom dia, ${nome}. Informamos que a ${parcela}ª parcela do seu acordo, no valor de ${valor}, vence hoje, ${vencimento}.\\n\\nO cumprimento do prazo é essencial para a manutenção dos termos acordados entre as partes.`;\n\n  if (inadimplentes.length > 0) {\n    mensagem += `\\n\\nAlém disso, identificamos parcelas anteriores em aberto:`;\n    for (const p of inadimplentes) {\n      mensagem += `\\n- Parcela Nº${p.parcela} — ${p.valor} — vencida em ${p.vencimento}`;\n    }\n    mensagem += `\\n\\nPor favor, entre em contato para regularizarmos a situação.`;\n  }\n\n  mensagem += `\\n\\nAtenciosamente,\\nViana Advocacia.`;\n\n  resultado.push({\n    json: {\n      numero: contato,\n      mensagem: mensagem\n    }\n  });\n}\n\nreturn resultado;"
+      },
+      "id": "bc519ca5-fbfd-4ae9-9972-e4beb4c2e9bc",
+      "name": "Monta mensagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evolution-api-production-bf30.up.railway.app/message/sendText/operacionalViana-prod",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "8d715ae17e45b02e7a5cf64fe246707f51c8e6546329225c75a7a52dcbbd6e6e"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.numero }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.mensagem }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "34b2559c-7ddc-45cd-b6ec-2625d47ea099",
+      "name": "Envia WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        816,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7,
+              "triggerAtMinute": null
+            }
+          ]
+        }
+      },
+      "id": "74177583-6def-4d0a-9db2-39313e39de4e",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -2720,
+        -80
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Agrupa abas em lotes5": {
+      "main": [
+        [
+          {
+            "node": "Le as linhas em lotes5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Le as linhas em lotes5": {
+      "main": [
+        [
+          {
+            "node": "Expande resultado batchGet5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expande resultado batchGet5": {
+      "main": [
+        [
+          {
+            "node": "Mapeia colunas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca feriados": {
+      "main": [
+        [
+          {
+            "node": "Merge feriados e linhas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge feriados e linhas": {
+      "main": [
+        [
+          {
+            "node": "Verifica dia util",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verifica dia util": {
+      "main": [
+        [
+          {
+            "node": "Precisa ajustar data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Precisa ajustar data": {
+      "main": [
+        [
+          {
+            "node": "Atualiza vencimento na planilha",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Monta mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pega a pasta": {
+      "main": [
+        [
+          {
+            "node": "Pega as planilhas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pega as planilhas": {
+      "main": [
+        [
+          {
+            "node": "Pega as abas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pega as abas": {
+      "main": [
+        [
+          {
+            "node": "Expande abas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expande abas": {
+      "main": [
+        [
+          {
+            "node": "Agrupa abas em lotes5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mapeia colunas": {
+      "main": [
+        [
+          {
+            "node": "Filtra vencimento hoje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtra vencimento hoje": {
+      "main": [
+        [
+          {
+            "node": "Merge feriados e linhas",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Monta mensagem": {
+      "main": [
+        [
+          {
+            "node": "Envia WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Pega a pasta",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Busca feriados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "4929298e-37d7-444f-bce9-bca49bfe9ea7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a5fb7cfee803653ca188af3b85f9457665fe0e60d17b8a69f3bdf1cc72b6f1c9"
+  },
+  "nodeGroups": [],
+  "id": "h2oEHhP0bY7o8uO1",
+  "tags": []
+}
